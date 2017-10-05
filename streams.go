@@ -37,6 +37,8 @@ type StreamOptions struct {
 	// NotifyOK is called whenever a successful operation was completed. This notify function can be used
 	// to detect that a stream is healthy again.
 	NotifyOK func()
+	// Enable or disable exponential back-off. Retry should only be enabled when CommitRetry is set to true.
+	CommitRetry bool
 }
 
 func (o *StreamOptions) withDefaults() *StreamOptions {
