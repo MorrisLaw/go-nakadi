@@ -128,6 +128,24 @@ func TestClient_httpGET(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{"key": "value"}, body)
 	})
+
+	t.Run("retry after 500", func(t *testing.T) {
+		client := setupClient(nil)
+
+		counter := helperMakeCounter(5)
+		httpmock.RegisterResponder("GET", url, func(r *http.Request) (*http.Response, error) {
+			retry := <-counter
+			if retry < 4 {
+				return nil, assert.AnError
+			}
+			return httpmock.NewStringResponse(http.StatusInternalServerError, encoded), nil
+			// return httpmock.NewStringResponse(http.StatusOK, encoded), nil
+		})
+		err := client.httpGET(&backoff.ZeroBackOff{}, url, &body, msg)
+		require.NoError(t, err)
+		assert.Equal(t, map[string]string{"key": "value"}, body)
+		assert.Equal(t, 5, <-counter)
+	})
 }
 
 func TestClient_httpPUT(t *testing.T) {
